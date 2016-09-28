@@ -1,0 +1,17 @@
+% vim: ft=erlang
+
+{application, rabbitmq_web_health,
+ [{description, "HTTP interface to check components health"},
+  {vsn, "0.1.0"},
+  {modules, []},
+  {registered, []},
+  {mod, {rabbit_wh_app, []}},
+  {env, [
+         {request_exchange, <<"GetHealthRequest">>},
+         {response_exchange, <<"GetHealthResponse">>}]},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  rabbit_common,
+                  rabbit,
+                  amqp_client]}]}.

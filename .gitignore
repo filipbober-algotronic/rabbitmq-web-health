@@ -1,6 +1,7 @@
 .sw?
 .*.sw?
 *.beam
+erl_crash.dump
 /.erlang.mk/
 /cover/
 /deps/
@@ -9,4 +10,4 @@
 /logs/
 /plugins/
 
-/rabbitmq_webhealth.d
+/rabbitmq_web_health.d

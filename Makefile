@@ -1,4 +1,4 @@
-PROJECT = rabbitmq_webhealth
+PROJECT = rabbitmq_web_health
 
 DEPS = rabbit_common rabbit amqp_client
 TEST_DEPS = rabbitmq_ct_helpers
