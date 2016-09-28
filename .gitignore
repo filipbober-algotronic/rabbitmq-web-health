@@ -1,6 +1,7 @@
 .sw?
 .*.sw?
 *.beam
+*.plt
 erl_crash.dump
 /.erlang.mk/
 /cover/

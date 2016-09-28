@@ -12,6 +12,9 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+%% Constants
+-define(CONTEXT, rabbit_wh_app).
+
 %%%===================================================================
 %%% Application callbacks
 %%%===================================================================
@@ -33,12 +36,10 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
-    case rabbit_wh_sup:start_link() of
-        {ok, Pid} ->
-            {ok, Pid};
-        Error ->
-            Error
-    end.
+    {ok, Listener} = application:get_env(rabbitmq_web_health, listener),
+    register_context(Listener),
+    rabbit_log:info("WebHealth plugin started. Port: ~w", [port(Listener)]),
+    rabbit_wh_sup:start_link().
 
 %%--------------------------------------------------------------------
 %% @private
@@ -51,5 +52,26 @@ start(_StartType, _StartArgs) ->
 %% @end
 %%--------------------------------------------------------------------
 stop(_State) ->
+    unregister_context(),
     ok.
 
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+
+register_context(Listener) ->
+    Routes = [
+              {'_', [
+                     {"/api/health", rabbit_wh_http_health, []}
+                    ]}
+             ],
+    rabbit_web_dispatch:register_context_handler(
+      ?CONTEXT, Listener, "",
+      cowboy_router:compile(Routes),
+      "HTTP interface to check components health").
+
+unregister_context() ->
+    rabbit_web_dispatch:unregister_context(?CONTEXT).
+
+port(Listener) ->
+    proplists:get_value(port, Listener).

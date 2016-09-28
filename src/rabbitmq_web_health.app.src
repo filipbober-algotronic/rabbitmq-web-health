@@ -7,6 +7,7 @@
   {registered, []},
   {mod, {rabbit_wh_app, []}},
   {env, [
+         {listener, [{port, 15673}]},
          {request_exchange, <<"GetHealthRequest">>},
          {response_exchange, <<"GetHealthResponse">>}]},
   {applications, [
@@ -14,4 +15,5 @@
                   stdlib,
                   rabbit_common,
                   rabbit,
-                  amqp_client]}]}.
+                  amqp_client,
+                  rabbitmq_web_dispatch]}]}.

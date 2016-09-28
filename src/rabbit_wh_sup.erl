@@ -55,12 +55,6 @@ init([]) ->
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
-    Restart = permanent,
-    Shutdown = 10000,
-    Type = worker,
-
-    Child = {rabbit_wh_worker, {rabbit_wh_worker, start_link, []},
-              Restart, Shutdown, Type, [rabbit_wh_worker]},
-
-    {ok, {SupFlags, [Child]}}.
+    Procs = [],
+    {ok, {SupFlags, Procs}}.
 
