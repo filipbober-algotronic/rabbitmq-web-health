@@ -55,6 +55,13 @@ init([]) ->
 
     SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
 
-    Procs = [],
+    Restart = permanent,
+    Shutdown = 10000,
+    Type = worker,
+
+    Procs = [
+             {rabbit_wh_amqp, {rabbit_wh_amqp, start_link, []},
+              Restart, Shutdown, Type, [rabbit_wh_amqp]}
+            ],
     {ok, {SupFlags, Procs}}.
 
