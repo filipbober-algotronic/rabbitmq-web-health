@@ -12,3 +12,4 @@ erl_crash.dump
 /plugins/
 
 /rabbitmq_web_health.d
+/tags

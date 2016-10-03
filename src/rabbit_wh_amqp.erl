@@ -9,6 +9,7 @@
 
 -behaviour(gen_server).
 
+-include("rabbit_wh.hrl").
 -include_lib("amqp_client/include/amqp_client.hrl").
 
 %% API
@@ -28,9 +29,8 @@
 -record(state,
         {
          channel,
-         vhost,
-         request_exchange,
-         response_exchange
+         request_exchange :: binary(),
+         response_exchange :: binary()
         }).
 
 %%%===================================================================
@@ -73,14 +73,12 @@ get_components() ->
 init([]) ->
     {ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
     {ok, Channel} = amqp_connection:open_channel(Connection),
-    {ok, VirtualHost} = application:get_env(rabbitmq_web_health, vhost),
     {ok, RequestExchange} = application:get_env(rabbitmq_web_health, request_exchange),
     {ok, ResponseExchange} = application:get_env(rabbitmq_web_health, response_exchange),
 
     rabbit_log:info("Started WebHealth AMQP process"),
     {ok, #state{
             channel = Channel,
-            vhost = VirtualHost,
             request_exchange = RequestExchange,
             response_exchange = ResponseExchange}}.
 
@@ -98,11 +96,10 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call(get_components, _From, #state{vhost = VirtualHost,
-                                          request_exchange = RequestExchange} = State) ->
-    Resource = rabbit_misc:r(VirtualHost, exchange, RequestExchange),
-    Components = [Key || #binding{key = Key} <- rabbit_binding:list_for_source(Resource)],
-    Reply = {ok, Components},
+handle_call(get_components, _From, #state{request_exchange = RequestExchange} = State) ->
+    Components = [get_vhost_components(VirtualHost, RequestExchange) ||
+                  VirtualHost <- rabbit_vhost:list()],
+    Reply = {ok, lists:flatten(Components)},
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, unknown_command, State}.
@@ -163,3 +160,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Get components for specified Virtual Host
+%% @end
+%%--------------------------------------------------------------------
+get_vhost_components(VirtualHost, RequestExchange) ->
+    Resource = rabbit_misc:r(VirtualHost, exchange, RequestExchange),
+    [#component{vhost = VirtualHost, name = Key} ||
+     #binding{key = Key} <- rabbit_binding:list_for_source(Resource)].

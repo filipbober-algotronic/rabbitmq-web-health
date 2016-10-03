@@ -8,7 +8,6 @@
   {mod, {rabbit_wh_app, []}},
   {env, [
          {listener, [{port, 15673}]},
-         {vhost, <<"/">>},
          {request_exchange, <<"GetHealthRequest">>},
          {response_exchange, <<"GetHealthResponse">>}]},
   {applications, [

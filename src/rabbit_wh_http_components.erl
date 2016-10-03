@@ -7,6 +7,8 @@
 %%%-------------------------------------------------------------------
 -module(rabbit_wh_http_components).
 
+-include("rabbit_wh.hrl").
+
 %% Cowboy REST handler callbacks
 -export([init/3,
          content_types_provided/2,
@@ -62,5 +64,7 @@ content_types_provided(Req, State) ->
 %%--------------------------------------------------------------------
 components_to_json(Req, State) ->
     {ok, Components} = rabbit_wh_amqp:get_components(),
-    {ok, Body} = jsone:try_encode([{<<"components">>, Components}]),
+    Serializable = [[{<<"vhost">>, VirtualHost}, {<<"name">>, Name}] ||
+                    #component{vhost = VirtualHost, name = Name} <- Components],
+    {ok, Body} = jsone:try_encode([{<<"components">>, Serializable}]),
     {Body, Req, State}.
