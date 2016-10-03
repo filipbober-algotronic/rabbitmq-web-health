@@ -62,7 +62,7 @@ stop(_State) ->
 register_context(Listener) ->
     Routes = [
               {'_', [
-                     {"/api/components", rabbit_wh_http_components, []},
+                     {"/api/components[/:vhost]", rabbit_wh_http_components, []},
                      {"/api/health", rabbit_wh_http_health, []}
                     ]}
              ],

@@ -14,7 +14,8 @@
 
 %% API
 -export([start_link/0,
-         get_components/0]).
+         list_components/0,
+         list_components_for_vhost/1]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -52,8 +53,17 @@ start_link() ->
 %% Gets the list of components
 %% @end
 %%--------------------------------------------------------------------
-get_components() ->
-    gen_server:call(?MODULE, get_components).
+list_components() ->
+    gen_server:call(?MODULE, list_components).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Gets the list of components for specified virtual host
+%% @end
+%%--------------------------------------------------------------------
+list_components_for_vhost(VirtualHost) ->
+    gen_server:call(?MODULE, {list_components, VirtualHost}).
+
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -96,7 +106,11 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call(get_components, _From, #state{request_exchange = RequestExchange} = State) ->
+handle_call({list_components, VirtualHost}, _From, #state{request_exchange = RequestExchange} = State) ->
+    Components = get_vhost_components(VirtualHost, RequestExchange),
+    Reply = {ok, Components},
+    {reply, Reply, State};
+handle_call(list_components, _From, #state{request_exchange = RequestExchange} = State) ->
     Components = [get_vhost_components(VirtualHost, RequestExchange) ||
                   VirtualHost <- rabbit_vhost:list()],
     Reply = {ok, lists:flatten(Components)},

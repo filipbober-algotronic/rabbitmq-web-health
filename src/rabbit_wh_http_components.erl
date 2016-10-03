@@ -63,8 +63,14 @@ content_types_provided(Req, State) ->
 %% @end
 %%--------------------------------------------------------------------
 components_to_json(Req, State) ->
-    {ok, Components} = rabbit_wh_amqp:get_components(),
+    {ReqVirtualHost, NewReq} = cowboy_req:binding(vhost, Req),
+    {ok, Components} = case ReqVirtualHost of
+                           undefined ->
+                               rabbit_wh_amqp:list_components();
+                           _ ->
+                               rabbit_wh_amqp:list_components_for_vhost(ReqVirtualHost)
+                       end,
     Serializable = [[{<<"vhost">>, VirtualHost}, {<<"name">>, Name}] ||
                     #component{vhost = VirtualHost, name = Name} <- Components],
     {ok, Body} = jsone:try_encode([{<<"components">>, Serializable}]),
-    {Body, Req, State}.
+    {Body, NewReq, State}.

@@ -20,7 +20,8 @@
 %% test cases
 -export([
          no_components_tests/1,
-         all_components_tests/1
+         all_components_tests/1,
+         vhost_components_tests/1
         ]).
 
 -include_lib("common_test/include/ct.hrl").
@@ -38,7 +39,8 @@ groups() ->
     [
      {non_parallel_tests, [], [
                                no_components_tests,
-                               all_components_tests
+                               all_components_tests,
+                               vhost_components_tests
                               ]}
 
     ].
@@ -74,6 +76,7 @@ end_per_group(_Groupname, _Config) ->
 %%% Testcase specific setup/teardown
 %%%===================================================================
 init_per_testcase(TestCase, Config) ->
+    rabbit_ct_broker_helpers:restart_broker(Config, 0),
     rabbit_ct_helpers:testcase_started(Config, TestCase).
 
 end_per_testcase(TestCase, Config) ->
@@ -102,6 +105,21 @@ all_components_tests(Config) ->
                          [{<<"vhost">>, <<"/">>}, {<<"name">>, <<"TestComponent1">>}],
                          [{<<"vhost">>, <<"/">>}, {<<"name">>, <<"TestComponent2">>}]
                         ]}] = Decoded,
+    rabbit_ct_client_helpers:close_channel(Channel),
+    passed.
+
+vhost_components_tests(Config) ->
+    Channel = rabbit_ct_client_helpers:open_channel(Config),
+    #'exchange.declare_ok'{} = amqp_channel:call(Channel, #'exchange.declare'{exchange = ?REQ_EXCHANGE}),
+    #'queue.declare_ok'{queue = Queue} = amqp_channel:call(Channel, #'queue.declare'{}),
+    #'queue.bind_ok'{} = amqp_channel:call(Channel, #'queue.bind'{queue = Queue, exchange = ?REQ_EXCHANGE, routing_key = <<"TestComponent">>}),
+
+    {ok, {{_HTTP, 200, _}, _Headers, ResBody}} = http_get(Config, "/components/%2F"),
+    Decoded = jsone:decode(list_to_binary(ResBody), [{object_format, proplist}]),
+    [{<<"components">>, [
+                         [{<<"vhost">>, <<"/">>}, {<<"name">>, <<"TestComponent">>}]
+                        ]}] = Decoded,
+    rabbit_ct_client_helpers:close_channel(Channel),
     passed.
 
 http_get(_Config, Path) ->
