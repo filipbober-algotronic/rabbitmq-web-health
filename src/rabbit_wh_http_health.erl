@@ -49,11 +49,15 @@ init(_Type, Req, []) ->
 %% @end
 %%--------------------------------------------------------------------
 handle(Req, State) ->
+    {ReqVirtualHost, NewReq1} = cowboy_req:binding(vhost, Req),
+    {ReqComponent, NewReq2} = cowboy_req:binding(component, NewReq1),
+    {ReqContentType, NewReq3} = cowboy_req:header(<<"content-type">>, NewReq2, <<"application/json">>),
+    rabbit_wh_amqp:check_health(ReqVirtualHost, ReqComponent, ReqContentType),
     Headers = [
-               {<<"content-type">>, <<"application/json">>}
+               {<<"content-type">>, ReqContentType}
               ],
     Content = <<"{\"healthy\": true}">>,
-    {ok, Res} = cowboy_req:reply(200, Headers, Content, Req),
+    {ok, Res} = cowboy_req:reply(200, Headers, Content, NewReq3),
     {ok, Res, State}.
 
 %%--------------------------------------------------------------------

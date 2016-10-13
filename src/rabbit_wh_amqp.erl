@@ -15,7 +15,8 @@
 %% API
 -export([start_link/0,
          list_components/0,
-         list_components_for_vhost/1]).
+         list_components_for_vhost/1,
+         check_health/3]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -63,6 +64,14 @@ list_components() ->
 %%--------------------------------------------------------------------
 list_components_for_vhost(VirtualHost) ->
     gen_server:call(?MODULE, {list_components, VirtualHost}).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Checks health of specified component
+%% @end
+%%--------------------------------------------------------------------
+check_health(VirtualHost, Component, ContentType) ->
+    gen_server:call(?MODULE, {check_health, VirtualHost, Component, ContentType}).
 
 
 %%%===================================================================
@@ -114,6 +123,10 @@ handle_call(list_components, _From, #state{request_exchange = RequestExchange} =
     Components = [get_vhost_components(VirtualHost, RequestExchange) ||
                   VirtualHost <- rabbit_vhost:list()],
     Reply = {ok, lists:flatten(Components)},
+    {reply, Reply, State};
+handle_call({check_health, VirtualHost, Component, ContentType}, _From, #state{request_exchange = RequestExchange, response_exchange = ResponseExchange} = State) ->
+    Response = send_health_rpc(VirtualHost, Component, ContentType, RequestExchange, ResponseExchange),
+    Reply = {ok, Response},
     {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     {reply, unknown_command, State}.
@@ -184,3 +197,6 @@ get_vhost_components(VirtualHost, RequestExchange) ->
     Resource = rabbit_misc:r(VirtualHost, exchange, RequestExchange),
     [#component{vhost = VirtualHost, name = Key} ||
      #binding{key = Key} <- rabbit_binding:list_for_source(Resource)].
+
+send_health_rpc(_VirtualHost, _Component, _ContentType, _RequestExchange, _ResponseExchange) ->
+    ok.

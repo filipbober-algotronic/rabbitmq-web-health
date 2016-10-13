@@ -63,7 +63,7 @@ register_context(Listener) ->
     Routes = [
               {'_', [
                      {"/api/components[/:vhost]", rabbit_wh_http_components, []},
-                     {"/api/health", rabbit_wh_http_health, []}
+                     {"/api/components/:vhost/:component/health", rabbit_wh_http_health, []}
                     ]}
              ],
     rabbit_web_dispatch:register_context_handler(
